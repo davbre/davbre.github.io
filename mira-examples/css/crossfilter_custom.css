@@ -1,0 +1,9 @@
+/*.dc-chart g.row rect {
+    fill-opacity: 0.8;
+    cursor: pointer;
+}*/
+
+.dc-chart g.row text {
+    fill: black;
+    font-size: 12px;
+}

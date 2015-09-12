@@ -1,0 +1,56 @@
+/* inline chart */
+.chart div {
+  font: 10px sans-serif;
+  background-color: steelblue;
+  text-align: right;
+  padding: 3px;
+  margin: 1px;
+  color: white;
+}
+
+.framed1 {
+  border: 1px solid black;
+}
+
+#container {
+  width: 800px;
+}
+
+#container div {
+  float: left;
+  height: 400px;
+  width: 800px;
+}
+
+
+.x-axis path, .y-axis path,
+.x-axis line, .y-axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.x-axis text, .y-axis text {
+  font-family: sans-serif;
+  font-size: 10px;
+}
+
+div.tooltip {
+  position: absolute;
+  max-width: 200px;
+  height: auto;
+  padding: 5px;
+  background-colour: white;
+  border-radius: 5px;
+  box-shadow: 4px 4px 10px rbga(0,0,0, 0.5);
+  pointer-events: none; /* VERY IMPORTANT apparently! */
+  font-family: sans-serif;
+  font-size: 12px;
+}
+
+.svg text {
+  fill: black;
+  font: 10px sans-serif;
+  font-weight: bold;
+  text-anchor: start;
+}
