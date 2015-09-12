@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example 1.1</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <link rel="stylesheet" href="css/jquery.dataTables.min.css">
+</head>
+<body>
+
+
+  <div id="data-dump">
+    <h3>Using DataTables to display a table:</h3>
+
+    <table id="example" class="display" cellspacing="0" width="100%">
+      <thead>
+        <tr>
+          <th>studyid</th>
+          <th>usubjid</th>
+          <th>exseq</th>
+          <th>exdose</th>
+          <th>exstdtc</th>
+        </tr>
+      </thead>
+ 
+      <tfoot>
+
+        <tr>
+          <th rowspan="1" colspan="1">
+            <input id="search-ex-studyid" type="text" placeholder="Search studyid" class="table-col-search">
+          </th>
+          <th rowspan="1" colspan="1">
+            <input id="search-ex-usubjid" type="text" placeholder="Search usubjid"class="table-col-search">
+          </th>
+          <th rowspan="1" colspan="1">
+            <input id="rng-lower-ex-exseq" placeholder="from" class="table-col-range">
+            <input id="rng-upper-ex-exseq" placeholder="to" class="table-col-range">
+          </th>
+          <th rowspan="1" colspan="1">
+            <input id="rng-lower-ex-exdose" placeholder="from" class="table-col-range">
+            <input id="rng-upper-ex-exdose" placeholder="to" class="table-col-range">
+          </th>
+          <th rowspan="1" colspan="1">exstdtc</th>
+        </tr>
+      </tfoot>
+    </table>
+
+
+  </div>
+
+  <script src="js/jquery-2.1.4.min.js"></script>
+  <script src="js/jquery.dataTables.min.js"></script>
+  <script src="js/my-globals.js"></script>
+
+  <script>
+
+    var dataset = "ex";
+
+    column_array = [
+               { "data": "studyid"},
+               { "data": "usubjid"},
+               { "data": "exseq" },
+               { "data": "exdose" },
+               { "data": "exstdtc" }
+             ];
+
+    window["datatable_" + dataset] = $('#example').DataTable({
+      "dom": "lrtip", // just removed "f" from default to get rid of search boxnet/reference/option/dom
+      "processing": true,
+      "serverSide": true,
+      "lengthMenu": [[10, 20, 30], [10, 20, 30]],
+      "columns": column_array,
+      "ajax": {
+        "url": root_url +  "tables/" + dataset + "/data",
+        "type": "POST",
+        // Add lower and upper range values to the ajax request data
+        "data": function(d) {
+          lower_range_values = {};
+          upper_range_values = {};
+
+          $.each(column_array, function(i,v) {
+            lower_range_values[v.data] = $("#rng-lower-" + dataset + "-" + v.data).val();
+            upper_range_values[v.data] = $("#rng-upper-" + dataset + "-" + v.data).val();
+          });
+
+          return $.extend( {}, d, {
+            "lower_range_values": lower_range_values,
+            "upper_range_values": upper_range_values //$('#extra').val()
+          });
+        }
+      }      
+    });
+
+
+    // add a listener for each search text box
+    window["datatable_" + dataset].columns().every( function () {
+        var that = this;
+        $('input', this.footer()).on('keyup change', function () {
+            that
+                .search(this.value)
+                .draw();
+        });
+    });
+
+
+  </script>
+
+</body>
+</html>

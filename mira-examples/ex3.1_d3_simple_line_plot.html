@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example 1</title>
+  <link rel="stylesheet" href="css/d3_examples.css">
+  <meta http-equiv="content-type" content="text/html; charset=UTF8">
+</head>
+<body class="application">
+
+  <a href="index.html">Index</a>
+
+  <div id="container">
+
+    <p>Select Subject
+      <select id="usubjid-option">
+        <option disabled selected> -- select a subject ID -- </option>
+      </select>
+    </p>
+
+  </div>
+
+</body>
+
+
+  <script src="js/d3.min.js"></script>
+  <script src="js/underscore-min.js"></script>
+  <script src="js/my-globals.js"></script>
+
+  <script>
+
+    var data;
+    var margin = {top: 40, right: 45, bottom: 50, left: 100};
+    var height = 300 - margin.top - margin.bottom;
+    var width = 500 - margin.left - margin.right;
+    // var padding=30;
+
+    var display_labs = ["Albumin", "Calcium", "Glucose", "Blood Urea Nitrogen (BUN)"]
+
+
+    //add tooltip
+    var tooltip = d3.select("body").append("div")
+                    .attr("class", "tooltip")
+                    .style("opacity", 0);
+
+    // populate select
+    d3.json(root_url + "/tables/dm/columns/usubjid/distinct?per_page=200", function(error, json) {
+      if (error) {
+          console.log(error);
+      } else {
+          data = json;
+      }      
+
+      var selList = d3.select("select")
+          .selectAll("option")
+          .data(data)
+          .enter()
+          .append("option")
+          .attr({
+            id: function(d) { return d; }
+          })
+          .text(function(d) { return d; });
+      });
+
+
+    function buildLine(ds,param) {
+
+      var results = _.pluck(ds['data'], 'lbstresn');
+      var visitDays = _.pluck(ds['data'], 'visitdy');
+      var visdyMax = _.max(visitDays);
+      var normalLows = _.pluck(ds['data'], 'lbstnrlo');
+      var normalHighs = _.pluck(ds['data'], 'lbstnrhi');
+      var paramUnit = _.uniq(_.pluck(ds['data'], 'lbstresu'));
+
+      var svg1 = d3.select("body").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      //add tooltip
+      var tooltip = d3.select("body").append("div")
+          .attr("class","tooltip")
+          .style("opacity", 0);
+
+      var xScale = d3.scale.linear()
+          .domain([_.min(visitDays),_.max(visitDays)])
+          .range([0, width]); //padding+5,w-padding-5]);
+
+      var yScale = d3.scale.linear()
+          .domain([
+            _.min(results.concat(normalLows))*0.98,
+            _.max(results.concat(normalHighs))*1.02
+          ])
+          .range([height,0])
+          .nice();
+
+
+      var xAxisGen = d3.svg.axis().scale(xScale).orient("bottom");
+      var yAxisGen = d3.svg.axis().scale(yScale).orient("left");
+
+
+      var lineFunc = d3.svg.line()
+          .x(function(d) { return xScale(d.visitdy); })
+          .y(function(d) { return yScale(d.lbstresn);})
+          .interpolate("linear")
+          ;
+
+      // could just draw a straight line but the data is in an array so just going to interpolate a straight line!
+      var upperNormalFunc = d3.svg.line()
+          .x(function(d) { return xScale(d.visitdy); })
+          .y(function(d) { return yScale(d.lbstnrhi);})
+          .interpolate("linear")
+          ;
+      var lowerNormalFunc = d3.svg.line()
+          .x(function(d) { return xScale(d.visitdy); })
+          .y(function(d) { return yScale(d.lbstnrlo);})
+          .interpolate("linear")
+          ;
+
+      var xAxis = svg1.append("g").call(xAxisGen)
+          .attr("class", "x-axis")
+          .attr("transform", "translate(0," + height + ")");
+      var yAxis = svg1.append("g").call(yAxisGen)
+          .attr("class", "y-axis");
+          // .attr("transform", "translate(" + width + ", 0)");
+
+      var paramLine = svg1.append("path")
+      .attr({
+        d: lineFunc(ds['data']),
+        "stroke": "purple",
+        "stroke-width": 2,
+        "fill": "none"
+      });
+
+      var upperNormalLine = svg1.append("path")
+      .attr({
+        d: upperNormalFunc(ds['data']),
+        "stroke": "black",
+        "stroke-width": 1,
+        "stroke-dasharray": ("3, 3"),
+        "fill": "none"
+      });
+
+      var lowerNormalLine = svg1.append("path")
+      .attr({
+        d: lowerNormalFunc(ds['data']),
+        "stroke": "black",
+        "stroke-width": 1,
+        "stroke-dasharray": ("3, 3"),
+        "fill": "none"
+      });
+
+
+      var dots = svg1.selectAll("circle")
+          .data(ds['data'])
+          .enter()
+          .append("circle")
+          .attr({
+            cx: function(d) { return xScale(d.visitdy); },  /* same as in lineFunc */
+            cy: function(d) { return yScale(d.lbstresn); },
+            r: 4,
+            "fill": "#666666"
+            // ,class: "circle-" + ds.category
+          })
+          .on("mouseover", function(d) {
+            tooltip.transition()
+                   .duration(500)
+                   .style("opacity", 0.85);
+            tooltip.html("<strong>" + d.lbstresn + "</strong>")
+                   .style("left", (d3.event.pageX) + "px")
+                   .style("top", (d3.event.pageY + 28) + "px")
+          })
+         .on("mouseout", function(d) { /* make it disappear when mousing away */
+            tooltip.transition()
+                   .duration(300)
+                   .style("opacity", 0)
+          });
+
+
+      // label graph    
+      var title = svg1.append("text")
+          .attr("class", "title")
+          .attr("x", width/2)
+          .attr("y", 0) //0 - (margin.top/2))
+          .attr("text-anchor", "middle")
+          .text(param);
+
+      // label x-axis
+      var xLabel = svg1.append("text")
+          .attr("x", width/2)
+          .attr("y", height + 30) // - 0*(margin.top/3))
+          .style("text-anchor", "middle")
+          .text("Study Day");
+
+      // label y-axis
+      var xLabel = svg1.append("text")
+          .attr("x", -1.4*height/2)
+          .attr("y", -1*margin.left/3)
+          .style("text-anchor", "left")
+          .attr("transform", "rotate(-90)")
+          .text(paramUnit);
+
+    }
+
+
+    function buildDisplay(ddSel) {
+
+      urlp1 = root_url + "/tables/lb/data?usubjid_eq="
+
+      _.each(display_labs, function(param) {
+
+        urlp2 = "&lbtest_eq=" + param;
+        fullUrl = urlp1 + ddSel + urlp2;
+
+        d3.json(fullUrl, function(error, json) {
+          if (error) {
+              console.log(error);
+          } else {
+              data = json;
+          }
+          
+          buildLine(data,param);
+
+        });
+
+      });
+
+    }
+
+
+    // event listener
+    d3.select("select")
+      .on("change", function(d,i) {
+        var selected_sbj = d3.select("#usubjid-option")
+                          .node() // this gives the actual selected node
+                          .value;
+
+        console.log(selected_sbj);
+        d3.selectAll("svg").remove();
+        buildDisplay(selected_sbj);
+      });
+
+  </script>
+
+</body>
+</html>
+
+
+

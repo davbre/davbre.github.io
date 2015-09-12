@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example 1.1</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF8">
+</head>
+<body>
+
+
+  <a href="index.html">Index</a>
+  <h3>Fetch project tables with jQuery, and insert into the DOM:</h3> 
+
+
+  <div id="extra-info"></div>
+
+
+  <button onclick="fun()">Fetch project table info</button>
+
+
+  <div id="data-dump"></div>
+
+
+  <script src="js/jquery-2.1.4.min.js"></script>
+  <script src="js/my-globals.js"></script>
+
+  <script>
+
+    fun = function getProjectTables() {
+      $.getJSON(root_url + "/tables", function(data) {
+        $("#data-dump").append("<pre>" + JSON.stringify(data, null, 4) + "</pre>");
+      });
+    }
+
+    $("#extra-info").append("<p>Using:</p><pre>" + htmlFunc(fun) + "</pre>");
+
+  </script>
+
+</body>
+</html>

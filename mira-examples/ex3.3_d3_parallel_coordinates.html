@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example 1</title>
+  <link rel="stylesheet" href="css/d3.parcoords.css">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <meta http-equiv="content-type" content="text/html; charset=UTF8">
+
+</head>
+<body class="application">
+
+  <div="container">
+    <div class="col-md-12">
+    <a href="index.html">Index</a><br />
+    <h3>Parallel Coordinates - Lab data example</h3>
+    <a href="https://github.com/syntagmatic/parallel-coordinates">https://github.com/syntagmatic/parallel-coordinates</a>
+
+    <div id="parallel-coordinates-example" class="parcoords" style="margin-left:auto;margin-right:auto;width:1300px;margin-left:50px;height:500px;">
+    </div>
+    </div>
+  </div>
+
+  <script src="js/jquery-2.1.4.min.js"></script>
+  <script src="js/d3.js"></script>
+  <script src="js/d3.parcoords.js"></script>
+  <script src="js/my-globals.js"></script>
+
+<script>
+
+  var colors = d3.scale.category10();
+
+  // get the public url of the aedm.csv file...
+  $.getJSON(root_url + "/tables/adlb_pc", function(data) {
+    data;
+  }).done(function(data) {
+
+    var a_el = document.createElement('a');
+    a_el.href = root_url;
+    csv_url = a_el.protocol + a_el.host + data.public_url;
+
+    // load csv file and create the chart
+    d3.csv(csv_url, function(data) {
+    // d3.csv("tmplb.csv", function(data) {
+
+      var color_range = ["#a6cee3","#1f78b4","#b2df8a","#33a02c", "#fb9a99","#e31a1c","#fdbf6f","#ff7f00", "#cab2d6","#6a3d9a","#ffff99","#b15928"]
+      // debugger;
+      var colorgen = d3.scale.ordinal(color_range).range();
+
+      var color = function(d) { return colors(d.actarm); };
+
+      var parcoords = d3.parcoords()("#parallel-coordinates-example")
+        .data(data)
+        // .hideAxis(["name"])
+        .color(color)
+        .alpha(0.25)
+        .composite("darken")
+        .margin({ top: 24, left: 150, bottom: 12, right: 0 })
+        .mode("queue")
+        .render()
+        .brushMode("1D-axes");  // enable brushing
+
+      parcoords.svg.selectAll("text")
+        .style("font", "10px sans-serif");
+    });
+  });
+</script>
+
+
+</body>
+</html>

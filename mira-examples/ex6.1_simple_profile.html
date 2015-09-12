@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Simple Patient Profile</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="startbootstrap-simple-sidebar-1.0.4/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="startbootstrap-simple-sidebar-1.0.4/css/simple-sidebar.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/tablesorter_style.css">
+    <link rel="stylesheet" href="css/d3_examples.css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <ul class="sidebar-nav">
+                <li class="sidebar-brand">
+                    <a href="index.html">Index</a>
+                </li>
+                <li>
+                  <select id="usubjid-select" size="6">
+                    <option disabled selected> -- select a subject ID -- </option>
+                  </select>
+                </li>
+                <hr />
+                <li>
+                    <a href="#pp-dm">Patient Summary</a>
+                </li>
+                <li>
+                    <a href="#pp-ex">Exposure</a>
+                </li>
+                <li>
+                    <a href="#pp-lb">Laboratory Results</a>
+                </li>
+                <li>
+                    <a href="#pp-ae">Adverse Events</a>
+                </li>
+            </ul>
+        </div>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+
+                <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Hide Menu</a>
+                <div class="row">
+                    <h3>Patient Summary</h3>
+                    <div id="pp-dm" class="col-md-9">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <h3>Exposure</h3>
+                    <div id="pp-ex" class="col-md-9">
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <h3>Laboratory Results</h3>
+                    <div id="pp-lb" class="col-md-9">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <h3>Adverse Events</h3>
+                    <div id="pp-ae" class="col-md-9">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+    <script src="startbootstrap-simple-sidebar-1.0.4/js/jquery.js"></script>
+    <script src="startbootstrap-simple-sidebar-1.0.4/js/bootstrap.min.js"></script>
+    <script src="js/handlebars.min.js"></script>
+    <script type="text/javascript" src="js/jquery.tablesorter/jquery.tablesorter.min.js"></script>
+    <script src="js/d3.min.js"></script>
+    <script src="js/c3.min.js"></script>
+    <script src="js/underscore-min.js"></script>
+
+
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+    <script src="js/my-globals.js"></script>
+
+
+    <script>
+
+      var display_labs = ["Albumin", "Calcium", "Glucose", "Blood Urea Nitrogen (BUN)"]
+      var margin = {top: 40, right: 45, bottom: 50, left: 100};
+      var height = 150 - margin.top - margin.bottom;
+      var width = 500 - margin.left - margin.right;
+
+      // populate subject select box
+      $.getJSON(root_url + "/tables/dm/columns/usubjid/distinct?per_page=200", function(data){
+        $.each(data, function(key, val) {
+          $('#usubjid-select').append(
+            $('<option></option>').val(val).html(val)
+          );
+        });
+      }).done(function() {
+        addSelectListener(checkUrlForSubject);
+      });
+
+      function addSelectListener(callback) {
+
+          $('#usubjid-select').on('change', function() {
+            selected_subject = $(this).val();
+
+            d3.selectAll("svg").remove();
+            $("#pp-dm").empty();
+            $("#pp-ex").empty();
+            $("#pp-lb").empty();
+
+            addDemog(selected_subject);
+            addEx(selected_subject);
+            addAe(selected_subject);
+            lbDisplay(selected_subject);
+            // addDomain("ex",selected_subject);
+            // addDomain("ae",selected_subject);
+
+          });
+          callback();
+      }
+
+      function checkUrlForSubject() {
+        if(window.location.hash) { // usubjid has been appended to URL
+          var usubjid_in_hash = document.URL.substr(document.URL.indexOf('#')+1)
+          console.log(usubjid_in_hash);
+          // debugger;
+          $('#usubjid-select option[value="' + usubjid_in_hash + '"]').attr("selected", "selected");
+          $('#usubjid-select').change();
+        }        
+      }
+
+      function addDemog(subject) {
+        $.getJSON(root_url + "/tables/dm/data?usubjid_eq=" + subject, function(data){
+          var context = data['data'][0];
+          var source = $('#template-dm').html();
+          var template = Handlebars.compile(source);
+          rendered = template(context);
+          $('#pp-dm').html(rendered);
+        });
+      }
+
+      function addEx(subject) {
+        $.getJSON(root_url + "/tables/ex/data?usubjid_eq=" + subject, function(data){
+          var context = data;
+          context['data'].sort(sort_by('exstdtc', false, function(a) { return a.toUpperCase(); }));
+          var source = $('#template-ex').html();
+          var template = Handlebars.compile(source);
+          rendered = template(context);
+          $('#pp-ex').html(rendered);
+        });
+      }
+
+
+      function addAe(subject) {
+        $("#pp-ae").empty();
+        $.getJSON(root_url + "/tables/ae/data?usubjid_eq=" + subject, function(data){
+          var context = data;
+          context['data'].sort(sort_by('aestdtc', false, function(a) { return a.toUpperCase(); }));
+          var source = $('#template-ae').html();
+          var template = Handlebars.compile(source);
+          rendered = template(context);
+          $('#pp-ae').html(rendered);
+        });
+      }
+
+
+      function addAe(subject) {
+        $("#pp-ae").empty();
+        $.getJSON(root_url + "/tables/ae/data?usubjid_eq=" + subject, function(data){
+          var context = data;
+          context['data'].sort(sort_by('aestdtc', false, function(a) { return a.toUpperCase(); }));
+          var source = $('#template-ae').html();
+          var template = Handlebars.compile(source);
+          rendered = template(context);
+          $('#pp-ae').html(rendered);
+        });
+      }
+
+
+      // function addDomain(domain,subject,sortby) {
+      //   $("#pp-" + domain).empty();
+      //   $.getJSON(root_url + "/tables/" + domain + "/data?usubjid_eq=" + subject, function(data){
+      //     // data.sort(sort_by())
+      //     var context = data;
+      //     var source = $('#template-' + domain).html();
+      //     var template = Handlebars.compile(source);
+      //     rendered = template(context);
+      //     $('#pp-' + domain).html(rendered);
+      //     $("#table-" + domain).tablesorter();
+      //   });
+      // }
+
+
+     function lbDisplay(subject) {
+
+      urlp1 = root_url + "/tables/lb/data?usubjid_eq="
+
+      _.each(display_labs, function(param) {
+
+        urlp2 = "&lbtest_eq=" + param;
+        fullUrl = urlp1 + subject + urlp2;
+
+        d3.json(fullUrl, function(error, json) {
+          if (error) {
+              console.log(error);
+          } else {
+              data = json;
+          }
+
+          buildLine(data,param);
+
+        });
+
+      });
+
+    }    
+
+
+    function buildLine(ds,param) {
+
+      var results = _.pluck(ds['data'], 'lbstresn');
+      var visitDays = _.pluck(ds['data'], 'visitdy');
+      var visdyMax = _.max(visitDays);
+      var normalLows = _.pluck(ds['data'], 'lbstnrlo');
+      var normalHighs = _.pluck(ds['data'], 'lbstnrhi');
+      var paramUnit = _.uniq(_.pluck(ds['data'], 'lbstresu'));
+
+      var svg1 = d3.select("#pp-lb").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      //add tooltip
+      var tooltip = d3.select("#pp-lb").append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 0);          
+
+
+      var xScale = d3.scale.linear()
+          .domain([_.min(visitDays),_.max(visitDays)])
+          .range([0, width]); //padding+5,w-padding-5]);
+
+      var yScale = d3.scale.linear()
+          .domain([
+            _.min(results.concat(normalLows))*0.98,
+            _.max(results.concat(normalHighs))*1.02
+          ])
+          .range([height,0])
+          .nice();
+
+
+      var xAxisGen = d3.svg.axis().scale(xScale).orient("bottom");
+      var yAxisGen = d3.svg.axis().scale(yScale).orient("left").ticks(0);
+
+
+      var lineFunc = d3.svg.line()
+          .x(function(d) { return xScale(d.visitdy); })
+          .y(function(d) { return yScale(d.lbstresn);})
+          .interpolate("linear")
+          ;
+
+      // could just draw a straight line but the data is in an array so just going to interpolate a straight line!
+      var upperNormalFunc = d3.svg.line()
+          .x(function(d) { return xScale(d.visitdy); })
+          .y(function(d) { return yScale(d.lbstnrhi);})
+          .interpolate("linear")
+          ;
+      var lowerNormalFunc = d3.svg.line()
+          .x(function(d) { return xScale(d.visitdy); })
+          .y(function(d) { return yScale(d.lbstnrlo);})
+          .interpolate("linear")
+          ;
+
+      var xAxis = svg1.append("g").call(xAxisGen)
+          .attr("class", "x-axis")
+          .attr("transform", "translate(0," + height + ")");
+      var yAxis = svg1.append("g").call(yAxisGen)
+          .attr("class", "y-axis");
+          // .attr("transform", "translate(" + width + ", 0)");
+
+      var paramLine = svg1.append("path")
+      .attr({
+        d: lineFunc(ds['data']),
+        "stroke": "purple",
+        "stroke-width": 2,
+        "fill": "none"
+      });
+
+      var upperNormalLine = svg1.append("path")
+      .attr({
+        d: upperNormalFunc(ds['data']),
+        "stroke": "black",
+        "stroke-width": 1,
+        "stroke-dasharray": ("3, 3"),
+        "fill": "none"
+      });
+
+      var lowerNormalLine = svg1.append("path")
+      .attr({
+        d: lowerNormalFunc(ds['data']),
+        "stroke": "black",
+        "stroke-width": 1,
+        "stroke-dasharray": ("3, 3"),
+        "fill": "none"
+      });
+
+
+      var dots = svg1.selectAll("circle")
+          .data(ds['data'])
+          .enter()
+          .append("circle")
+          .attr({
+            cx: function(d) { return xScale(d.visitdy); },  /* same as in lineFunc */
+            cy: function(d) { return yScale(d.lbstresn); },
+            r: 4,
+            "fill": "#666666"
+            // ,class: "circle-" + ds.category
+          })
+          .on("mouseover", function(d) {
+            tooltip.transition()
+                   .duration(500)
+                   .style("opacity", 0.85);
+            tooltip.html("<strong>" + d.lbstresn + "</strong>")
+                   .style("left", (d3.event.pageX) + "px")
+                   .style("top", (d3.event.pageY + 28) + "px")
+          })
+         .on("mouseout", function(d) { /* make it disappear when mousing away */
+            tooltip.transition()
+                   .duration(300)
+                   .style("opacity", 0)
+          });
+
+
+      // label graph    
+      var title = svg1.append("text")
+          .attr("class", "title")
+          .attr("x", width/2)
+          .attr("y", 0) //0 - (margin.top/2))
+          .attr("text-anchor", "middle")
+          .text(param);
+
+      // label x-axis
+      var xLabel = svg1.append("text")
+          .attr("x", width/2)
+          .attr("y", height + 30) // - 0*(margin.top/3))
+          .style("text-anchor", "middle")
+          .text("Study Day");
+
+      // label y-axis
+      var xLabel = svg1.append("text")
+          .attr("x", -1.4*height/2)
+          .attr("y", -1*margin.left/3)
+          .style("text-anchor", "left")
+          .attr("transform", "rotate(-90)")
+          .text(paramUnit);
+
+    }
+
+
+    </script>
+
+
+    
+    <!--------------------------------------------------------------------------
+      --------------------------------------------------------------------------
+         The rest is just templates!
+      --------------------------------------------------------------------------
+      -------------------------------------------------------------------------->
+    <script id="template-dm" type="text/x-handlebars-template">
+      <div class="col-md-6">
+      <table id="table-dm" class="table table-striped">
+        <tr>
+          <td>Subject ID</td><td>{{ usubjid }}</td>
+        </tr>
+        <tr>
+          <td>Age / Gender / Country</td><td>{{ age }} / {{ sex }} / {{ country }}</td>
+        </tr>
+        <tr>
+          <td>Treatment Arm</td><td>{{ actarm }}</td>
+        </tr>
+        <tr>
+          <td>Investigator site ID / Name </td><td>{{ siteid }} / {{ invnam }}</td>
+        </tr>
+        <tr>
+          <td>Study Start / End Dates</td><td>{{ rfstdtc }} / {{ rfendtc }}</td>
+        </tr>
+      </table>
+      </div>
+    </script>
+
+
+    <script id="template-ae" type="text/x-handlebars-template">
+      <div class="col-md-9">
+      <table id="table-ae" class="table table-bordered tablesorter">
+        <tr class="header">
+          <th>Reported Term</th>
+          <th>Preferred Term</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+        </tr>
+        {{#each data}}
+          <tr>
+            <td>{{ aeterm }}</td><td>{{ aedecod }}</td><td>{{ aestdtc }}</td><td>{{ aeendtc }}</td>
+          </tr>
+        {{/each}}
+      </table>
+      </div>
+    </script>
+
+
+    <script id="template-ex" type="text/x-handlebars-template">
+      <div class="col-md-9">
+      <table id="table-ex" class="table table-bordered tablesorter">
+        <tr class="header">
+          <th>Dose</th>
+          <th>Unit</th>
+          <th>Date</th>
+        </tr>
+        {{#each data}}
+          <tr>
+            <td>{{ exdose }}</td><td>mg</td><td>{{ exstdtc }}</td>
+          </tr>
+        {{/each}}
+      </table>
+      </div>
+    </script>    
+</body>
+
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example 1.1</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF8">
+  <link rel="stylesheet" href="css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/tablesorter_style.css">
+  <link rel="stylesheet" href="css/ex_5.1.css">
+</head>
+<body>
+
+  <div id="container">
+    <a href="index.html">Index</a><br />
+
+    <div class="center-block">
+      <h4>Select an Table</h4>
+      <select id="ae-report-option" size="6">
+        <!-- <option disabled selected> -- select a table -- </option> -->
+      </select>
+    </div>
+
+
+    <div id="ae-table" class="col-md-6"></div>
+
+
+    <div id="adae-listing" class="col-md-9">
+      <br />
+      <h3>Adverse Event Listing</h3>
+      <table id="adae">
+        <thead>
+          <tr class="header">
+            <th>Treatment Arm</th>
+            <th>Subject ID</th>
+            <th>Gender</th>
+            <th>AE Start Date</th>
+            <th>AE End Date</th>
+            <th>Reported Term</th>
+            <th>Preferred Term</th>
+            <th>Serious</th>
+            <th>Severity</th>
+          </tr>
+        </thead>
+        <tbody></tbody><tfoot></tfoot>      
+      </table>
+    </div>
+  </div>
+
+  <script src="js/my-globals.js"></script>
+  <script src="js/jquery-2.1.4.min.js"></script>
+  <script src="js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript" src="js/jquery.tablesorter/jquery.tablesorter.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+
+  <script>
+
+  $(document).ready(function() {
+
+    
+    patient_profile_root = "ex6.1_simple_profile.html";
+
+    $("#adae-listing").hide();
+
+    // 1. populate select box
+    // 2. add listener to select box (to trigger a summary table to be inserted)
+    // 3. once listener has been added, a callback triggers first select option
+    // 4. when table inserted, listener is added for clicks on the <td> cells
+    // 5. the "At least one event" listener is called so that all relevant AEs are listed below by DataTables
+    // 6. use DataTables callback to link usubjid to its patient profile
+    // populate report select box
+    output_ids_url = root_url + "/tables/reports/columns/outid/distinct";
+    ae1_outputs_url = root_url + "/tables/report_titles/data?outid_begins=AE1"
+    console.log("Report IDs:       " + output_ids_url);
+    console.log("Report titles:    " + ae1_outputs_url);
+    $.getJSON(output_ids_url, function(reports){
+      $.getJSON(ae1_outputs_url, function(titles){
+        that_titles = titles['data'];
+        $.each(reports, function(ndx, val) {
+          title = that_titles.filter(function(obj) { return obj.outid === val; })[0].title;
+           $('#ae-report-option').append(
+            $('<option></option>').val(val).html(title));
+        });
+      }).done(function(){
+          addSelectListener();
+          $("#ae-report-option option:first").attr('selected','selected');
+          $("#ae-report-option").change();
+      });
+    });
+
+
+    function addSelectListener(){
+
+      // $("#ae-report-option").val($("#ae-report-option option:first").val());
+      // $("#ae-report-option").val($("#ae-report-option option:first").val());
+
+      // listener for dataset table select
+      $('#ae-report-option').on('change', function() {
+        $("#ae-table").empty();
+
+        selected_outid = $(this).val();
+        selected_title = $(this).find('option:selected').text();
+
+        $("#ae-table").append("<h3>" + selected_title + "</h3>");
+
+        var table_template = '<table id="ae1" class="table tablesorter">\
+          <thead>\
+            <tr class="header">\
+              <th>Preferred Term</th>\
+              <th id="pbo-header">Placebo<th><pre>%</pre></th><th><pre>#</pre></th>\
+              <th id="trta-header">Treatment A</th><th><pre>%</pre></th><th><pre>#</pre></th>\
+              <th id="trtb-header">Treatment B</th><th><pre>%</pre></th><th><pre>#</pre></th>\
+              <th id="trtc-header">Treatment C</th><th><pre>%</pre></th><th><pre>#</pre></th>\
+            </tr>\
+          </thead><tbody></tbody><tfoot></tfoot>\
+        </table>\
+        <pre>\
+N = no. subjects in treatment group, n = subjects with AE,  % = % of subjects with AE,  # = no. of events</pre>';
+
+        $("#ae-table").append(table_template);
+
+        insertTable(selected_outid, function() { $("#at-least-one").click(); }); // callback to populate listing on pageload
+      });      
+
+    }
+
+
+    function insertTable(outid, callback) {
+
+      output_url = root_url + "/tables/reports/data?outid_eq=" + outid;
+      console.log("Get report:       " + output_url);
+      $.getJSON(output_url, function(resp) {
+        that_outid = outid;
+        
+        pbo_N = resp["data"][0]["b_pbo"];
+        trta_N = resp["data"][0]["b_trta"];
+        trtb_N = resp["data"][0]["b_trtb"];
+        trtc_N = resp["data"][0]["b_trtc"];
+
+        $("#pbo-header").append(" N = " + pbo_N + "<pre>n</pre>");
+        $("#trta-header").append(" N = " + trta_N + "<pre>n</pre>");
+        $("#trtb-header").append(" N = " + trtb_N + "<pre>n</pre>");
+        $("#trtc-header").append(" N = " + trtc_N + "<pre>n</pre>");
+
+        $.each(resp['data'], function(index, row) {
+
+          tableRow = '<tr id="output_id_' + row.id + '">' +
+                        '<td id="at-least-one" class="event-count aedecod">' + noNull(row.col1,"-") + "</td>" +
+                        '<td class="PBO">' + noNull(row.pbo_1,"-") + '</td>' +
+                        '<td class="PBO">' + noNull(row.pbo_3,"-") + '</td>' +
+                        '<td class="event-count" data-trt="PBO">' + noNull(row.pbo_2,"-") + "</td>" +
+                        '<td class="TRTA">' + noNull(row.trta_1,"-") + "</td>" +
+                        '<td class="TRTA">' + noNull(row.trta_3,"-") + "</td>" +
+                        '<td class="event-count" data-trt="TRTA">' + noNull(row.trta_2,"-") + "</td>" +
+                        '<td class="TRTB">' + noNull(row.trtb_1,"-") + "</td>" +
+                        '<td class="TRTB">' + noNull(row.trtb_3,"-") + "</td>" +
+                        '<td class="event-count" data-trt="TRTB">' + noNull(row.trtb_2,"-") + "</td>" +
+                        '<td class="TRTC">' + noNull(row.trtc_1,"-") + "</td>" +
+                        '<td class="TRTC">' + noNull(row.trtc_3,"-") + "</td>" +
+                        '<td class="event-count" data-trt="TRTC">' + noNull(row.trtc_2,"-") + "</td>" +
+                      "</tr>";
+          // console.log(tableRow);
+          $("#ae1 tbody").append(tableRow);
+        });
+
+      }).done(function() {
+
+        $("#ae1").tablesorter();
+
+        $("td.event-count").click(function() {
+
+          $("#adae-listing").show();
+
+          // remove existing listing if exists
+          if (typeof ae_table != "undefined") { ae_table.destroy(); }
+
+
+          dataset = "adae";
+          filter_url = root_url +  "/tables/" + dataset + "/data?";
+          
+          // amend query string for gender
+          if (that_outid.indexOf("_F") >= 0) {
+            filter_url = filter_url + "sex_eq=F&";
+          } else if (that_outid.indexOf("_M") >=0) {
+            filter_url = filter_url + "sex_eq=M&";
+          }
+
+          // amend query string for seriousness
+          if (that_outid.indexOf("_SER") >= 0) { filter_url = filter_url + "aeser_eq=Y&"; }
+
+          // amend query string for severity
+          if (that_outid.indexOf("_SEV") >= 0) { filter_url = filter_url + "aesev_eq=Severe&"; }
+
+          
+          if($(this).hasClass("aedecod")) {
+            aedecod = $(this).text();
+            filter_url = filter_url + "actarmcd_ne=SCRNFAIL&"
+            if (aedecod.toUpperCase() != "AT LEAST ONE EVENT") {
+              filter_url = filter_url + "aedecod_eq=" + aedecod;
+            }
+          } else {
+            armcd = $(this).attr("data-trt");
+            aedecod = $(this).parent().find("td.aedecod").text();
+            if (aedecod.toUpperCase() === "AT LEAST ONE EVENT") {
+              filter_url = filter_url + "actarmcd_eq=" + armcd;
+            } else {
+              filter_url = filter_url + "aedecod_eq=" + aedecod + "&actarmcd_eq=" + armcd
+            }
+          }
+
+          console.log("Get listing data: " + filter_url);
+
+          column_array = [
+              { "data": "arm" },
+              { "data": "usubjid" },
+              { "data": "sex" },
+              { "data": "aestdtc" },
+              { "data": "aeendtc" },
+              { "data": "aeterm" },
+              { "data": "aedecod" },
+              { "data": "aeser" },
+              { "data": "aesev" },
+            ];
+
+          ae_table = $('#' + dataset).DataTable({
+            "dom": "lrtip", // just removed "f" from default to get rid of search boxnet/reference/option/dom
+            "processing": true,
+            "serverSide": true,
+            "lengthMenu": [[10, 20, 30], [10, 20, 30]],
+            "columns": column_array,
+            "columnDefs": [ {
+              "targets": 1,
+              "createdCell": function (td, cellData, rowData, row, col) {
+                $(td).html('<a href="' + patient_profile_root + '#' + cellData + '">' + cellData + "</a>");
+              },
+            }],
+            "ajax": {
+              "url": filter_url,
+              "type": "POST"
+            }
+          });
+
+        });
+
+        callback();
+
+      });
+
+    }  
+
+  });
+  </script>
+
+</body>
+</html>
