@@ -36,7 +36,8 @@
 
     var a_el = document.createElement('a');
     a_el.href = root_url;
-    csv_url = a_el.protocol + a_el.host + data.public_url;
+
+    csv_url = a_el.protocol + "//" + a_el.host + data.public_url;
 
     // load csv file and create the chart
     d3.csv(csv_url, function(data) {
