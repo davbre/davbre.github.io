@@ -7,12 +7,25 @@
         <title>Examples of Interacting with a Mira API</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link href="css/bootstrap.min.css" rel="stylesheet">
-        <link href="css/index.css" rel="stylesheet">        
         <!--[if lt IE 9]>
           <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
         <![endif]-->
-     </head>
+    </head>
+   
+    <style>
+      ul.nav li a, ul.nav li a:visited {
+          color: dark-blue !important;
+      }
 
+      ul.nav li a:hover, ul.nav li a:active {
+          color: green !important;
+      }
+
+/*      ul.nav li.active a {
+          color: #anycolor !important;
+ */     }
+    </style> 
+   
     <body>
         
       <div class="navbar navbar-default navbar-static-top">
@@ -52,6 +65,7 @@
 
         <h2>Interacting with a Mira API</h2>
 
+  
         <p>All examples below read data from the following Mira project API:</p>
         <pre id="root-url"></pre>
 
@@ -73,7 +87,7 @@
 
 
         <h4>crossfilter</h4>
-        <a href="ex4.1_crossfilter_ae.html">Example 4.1: crossfilter adverse events example</a><br />
+        <a href="ex4.1_crossfilter_ae.html">Example 4.1: crossfilter, example</a><br />
 
 
         <h4>Interactive Tables</h4>
@@ -84,14 +98,11 @@
 
       </div>
 
-      <script src="js/jquery-2.1.4.min.js"></script>
+        
       <script src="js/my-globals.js"></script>
+      <script src="js/jquery-2.1.4.min.js"></script>
       <script>
-        $.getJSON(root_url, function(data) {
-          $("pre#root-url").append("Name:          " + data.name);
-          $("pre#root-url").append("\nDescription: " + data.description);
-          $("pre#root-url").append('\nRoot URL:<a href="' + root_url + '">      ' + root_url + '</a>');
-        });
+        $("pre#root-url").append('    <a href="' + root_url + '">' + root_url + '</a>');
       </script>
        
     </body>

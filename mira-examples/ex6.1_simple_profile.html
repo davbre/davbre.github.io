@@ -17,6 +17,7 @@
     <link href="startbootstrap-simple-sidebar-1.0.4/css/simple-sidebar.css" rel="stylesheet">
     <link rel="stylesheet" href="css/tablesorter_style.css">
     <link rel="stylesheet" href="css/d3_examples.css">
+    <link rel="stylesheet" href="css/info-box.css">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -64,6 +65,8 @@
             <div class="container-fluid">
 
                 <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Hide Menu</a>
+                <a href="#info-box-toggle" class="btn btn-default" id="info-box-toggle">Show/hide info box</a>
+
                 <div class="row">
                     <h3>Patient Summary</h3>
                     <div id="pp-dm" class="col-md-9">
@@ -88,6 +91,13 @@
                     <div id="pp-ae" class="col-md-9">
                     </div>
                 </div>
+
+
+                <div id="info-box">
+                  <h5>HTTP requests to Mira (most recent on top):</h5>
+                  <div id="info-box-prepend">
+                </div>
+
 
             </div>
         </div>
@@ -123,7 +133,9 @@
       var width = 500 - margin.left - margin.right;
 
       // populate subject select box
-      $.getJSON(root_url + "/tables/dm/columns/usubjid/distinct?per_page=200", function(data){
+      subjects_url = root_url + "/tables/dm/columns/usubjid/distinct?per_page=200";
+      infoBox('Subjects: &nbsp;&nbsp;&nbsp;<a href="' + subjects_url + '">' + subjects_url + '</a>');
+      $.getJSON(subjects_url, function(data){
         $.each(data, function(key, val) {
           $('#usubjid-select').append(
             $('<option></option>').val(val).html(val)
@@ -165,7 +177,9 @@
       }
 
       function addDemog(subject) {
-        $.getJSON(root_url + "/tables/dm/data?usubjid_eq=" + subject, function(data){
+        data_url = root_url + "/tables/dm/data?usubjid_eq=" + subject;
+        infoBox('dm data: &nbsp;&nbsp;&nbsp;<a href="' + data_url + '">' + data_url + '</a>');
+        $.getJSON(data_url, function(data){
           var context = data['data'][0];
           var source = $('#template-dm').html();
           var template = Handlebars.compile(source);
@@ -175,7 +189,9 @@
       }
 
       function addEx(subject) {
-        $.getJSON(root_url + "/tables/ex/data?usubjid_eq=" + subject, function(data){
+        data_url = root_url + "/tables/ex/data?usubjid_eq=" + subject;
+        infoBox('ex data: &nbsp;&nbsp;&nbsp;<a href="' + data_url + '">' + data_url + '</a>');
+        $.getJSON(data_url, function(data){
           var context = data;
           context['data'].sort(sort_by('exstdtc', false, function(a) { return a.toUpperCase(); }));
           var source = $('#template-ex').html();
@@ -188,7 +204,9 @@
 
       function addAe(subject) {
         $("#pp-ae").empty();
-        $.getJSON(root_url + "/tables/ae/data?usubjid_eq=" + subject, function(data){
+        data_url = root_url + "/tables/ae/data?usubjid_eq=" + subject;
+        infoBox('ae data: &nbsp;&nbsp;&nbsp;<a href="' + data_url + '">' + data_url + '</a>');
+        $.getJSON(data_url, function(data){
           var context = data;
           context['data'].sort(sort_by('aestdtc', false, function(a) { return a.toUpperCase(); }));
           var source = $('#template-ae').html();
@@ -199,17 +217,17 @@
       }
 
 
-      function addAe(subject) {
-        $("#pp-ae").empty();
-        $.getJSON(root_url + "/tables/ae/data?usubjid_eq=" + subject, function(data){
-          var context = data;
-          context['data'].sort(sort_by('aestdtc', false, function(a) { return a.toUpperCase(); }));
-          var source = $('#template-ae').html();
-          var template = Handlebars.compile(source);
-          rendered = template(context);
-          $('#pp-ae').html(rendered);
-        });
-      }
+      // function addAe(subject) {
+      //   $("#pp-ae").empty();
+      //   $.getJSON(root_url + "/tables/ae/data?usubjid_eq=" + subject, function(data){
+      //     var context = data;
+      //     context['data'].sort(sort_by('aestdtc', false, function(a) { return a.toUpperCase(); }));
+      //     var source = $('#template-ae').html();
+      //     var template = Handlebars.compile(source);
+      //     rendered = template(context);
+      //     $('#pp-ae').html(rendered);
+      //   });
+      // }
 
 
       // function addDomain(domain,subject,sortby) {
@@ -233,15 +251,16 @@
       _.each(display_labs, function(param) {
 
         urlp2 = "&lbtest_eq=" + param;
-        fullUrl = urlp1 + subject + urlp2;
+        full_lb_url = urlp1 + subject + urlp2;
 
-        d3.json(fullUrl, function(error, json) {
+        d3.json(full_lb_url, function(error, json) {
           if (error) {
               console.log(error);
           } else {
               data = json;
           }
 
+          infoBox("lb data: " + '<a href="' + full_lb_url + '">' + full_lb_url + '</a>');
           buildLine(data,param);
 
         });

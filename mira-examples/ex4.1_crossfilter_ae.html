@@ -156,6 +156,7 @@
         <tr class="header">
           <th>Subject ID</th>
           <th>Gender</th>
+          <th>Age</th>
           <th>Treatment</th>
           <th>Country Code</th>
           <th>AE Start Date</th>
@@ -338,6 +339,7 @@
           "aoColumns": [
             { "mData": "usubjid", "sDefaultContent": " " },
             { "mData": "sex", "sDefaultContent": " " },
+            { "mData": "age", "sDefaultContent": " " },
             { "mData": "actarm", "sDefaultContent": " " },
             { "mData": "country", "sDefaultContent": " " },
             { "mData": "aestdtc", "sDefaultContent": " " },
@@ -346,7 +348,14 @@
             { "mData": "aebodsys", "sDefaultContent": " " },
             { "mData": "aeser", "sDefaultContent": " " },
             { "mData": "aesev", "sDefaultContent": " " }
-          ]
+          ],
+          "columnDefs": [ {
+            "targets": 0,
+            "createdCell": function (td, cellData, rowData, row, col) {
+              $(td).html('<a href="' + patient_profile_root + '#' + cellData + '">' + cellData + "</a>");
+            },
+          }]
+
         });
 
         // Picked theChart arbitrarily. Re-render datatable

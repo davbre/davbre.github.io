@@ -1,7 +1,8 @@
 
-// var root_url = "http://localhost:3000/api/projects/1";
+var root_url = "http://localhost:3000/api/projects/1";
 // var root_url = "http://46.101.208.152/api/projects/1";
 var root_url = "http://46.101.208.152/api/projects/3";
+var patient_profile_root = "ex6.1_simple_profile.html";
 
 var entityMap = {
   "&": "&amp;",
@@ -41,7 +42,20 @@ var sort_by = function(field, reverse, primer){
      } 
 }
 
+
 function noNull(value,replace) {
   replace = typeof replace !== 'undefined' ? replace : "";
   return (value == null) ? replace : value
 }
+
+
+function infoBox(text,dom_id) {
+  dom_id = typeof dom_id !== 'undefined' ? a : "info-box-prepend";
+  if (typeof jQuery != 'undefined') {
+    $("#" + dom_id).prepend('<div class="info-box-div">' + text + '</div>');
+  }
+}
+
+$('#info-box-toggle').click(function() {
+  $('#info-box').toggle();
+});

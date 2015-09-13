@@ -7,14 +7,16 @@
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/tablesorter_style.css">
   <link rel="stylesheet" href="css/ex_5.1.css">
+  <link rel="stylesheet" href="css/info-box.css">
 </head>
 <body>
 
   <div id="container">
     <a href="index.html">Index</a><br />
+    <button id="info-box-toggle">Show/hide info box</button>
 
     <div class="center-block">
-      <h4>Select n Table</h4>
+      <h4>Select a Table</h4>
       <select id="ae-report-option" size="6">
         <!-- <option disabled selected> -- select a table -- </option> -->
       </select>
@@ -46,6 +48,12 @@
     </div>
   </div>
 
+
+  <div id="info-box">
+    <h5>HTTP requests to Mira (most recent on top):</h5>
+    <div id="info-box-prepend"></div>
+  </div>
+
   <script src="js/my-globals.js"></script>
   <script src="js/jquery-2.1.4.min.js"></script>
   <script src="js/jquery.dataTables.min.js"></script>
@@ -54,11 +62,9 @@
 
   <script>
 
+
   $(document).ready(function() {
-
     
-    patient_profile_root = "ex6.1_simple_profile.html";
-
     $("#adae-listing").hide();
 
     // 1. populate select box
@@ -70,8 +76,8 @@
     // populate report select box
     output_ids_url = root_url + "/tables/reports/columns/outid/distinct";
     ae1_outputs_url = root_url + "/tables/report_titles/data?outid_begins=AE1"
-    console.log("Report IDs:       " + output_ids_url);
-    console.log("Report titles:    " + ae1_outputs_url);
+    infoBox('Report IDs: &nbsp;&nbsp;&nbsp;<a href="' + output_ids_url + '">' + output_ids_url + '</a>');
+    infoBox('Report titles:&nbsp;<a href="' + ae1_outputs_url + '">' + ae1_outputs_url + '</a>');
     $.getJSON(output_ids_url, function(reports){
       $.getJSON(ae1_outputs_url, function(titles){
         that_titles = titles['data'];
@@ -127,7 +133,7 @@ N = no. subjects in treatment group, n = subjects with AE,  % = % of subjects wi
     function insertTable(outid, callback) {
 
       output_url = root_url + "/tables/reports/data?outid_eq=" + outid;
-      console.log("Get report:       " + output_url);
+      infoBox('Report data: &nbsp;&nbsp;<a href="' + output_url + '">' + output_url + '</a>');
       $.getJSON(output_url, function(resp) {
         that_outid = outid;
         
@@ -207,8 +213,7 @@ N = no. subjects in treatment group, n = subjects with AE,  % = % of subjects wi
             }
           }
 
-          console.log("Get listing data: " + filter_url);
-
+          infoBox('Listing data:&nbsp;&nbsp;<a href="' + filter_url + '">' + filter_url + '</a>');
           column_array = [
               { "data": "arm" },
               { "data": "usubjid" },
@@ -242,13 +247,14 @@ N = no. subjects in treatment group, n = subjects with AE,  % = % of subjects wi
         });
 
         callback();
-
       });
 
     }  
 
+
   });
-  </script>
+
+</script>
 
 </body>
 </html>
