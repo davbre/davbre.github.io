@@ -82,6 +82,7 @@
         <h4>Patient Profile</h4>
         <a href="ex6.1_simple_profile.html">Example 6.1: Patient Profile</a><br />
 
+        <br /><br /><br /><br />
       </div>
 
       <script src="js/jquery-2.1.4.min.js"></script>
@@ -89,8 +90,9 @@
       <script>
         $.getJSON(root_url, function(data) {
           $("pre#root-url").append("Name:          " + data.name);
-          $("pre#root-url").append("\nDescription: " + data.description);
-          $("pre#root-url").append('\nRoot URL:<a href="' + root_url + '">      ' + root_url + '</a>');
+          $("pre#root-url").append("\nDescription:   " + data.description);
+          $("pre#root-url").append('\nRoot URL:      <a href="' + root_url + '">' + root_url + '</a>');
+          $("pre#root-url").append('\nAPI Details:   <a href="' + root_url.replace('api/','') + '/api-details">' + root_url.replace('api/','') + '/api-details</a>');
         });
       </script>
        

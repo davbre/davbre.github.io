@@ -16,7 +16,8 @@
 
     <link href="startbootstrap-simple-sidebar-1.0.4/css/simple-sidebar.css" rel="stylesheet">
     <link rel="stylesheet" href="css/tablesorter_style.css">
-    <link rel="stylesheet" href="css/d3_examples.css">
+    <link rel="stylesheet" href="css/c3.min.css">
+    <!-- <link rel="stylesheet" href="css/d3_examples.css"> -->
     <link rel="stylesheet" href="css/info-box.css">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -51,10 +52,10 @@
                     <a href="#pp-ex">Exposure</a>
                 </li>
                 <li>
-                    <a href="#pp-lb">Laboratory Results</a>
+                    <a href="#pp-ae">Adverse Events</a>
                 </li>
                 <li>
-                    <a href="#pp-ae">Adverse Events</a>
+                    <a href="#pp-lb">Laboratory Results</a>
                 </li>
             </ul>
         </div>
@@ -74,6 +75,13 @@
                 </div>
 
                 <div class="row">
+                    <h3>Study Visits</h3>
+                    <div id="pp-sv" class="col-md-9">
+                    </div>
+                </div>
+
+
+                <div class="row">
                     <h3>Exposure</h3>
                     <div id="pp-ex" class="col-md-9">
                     </div>
@@ -81,14 +89,16 @@
 
 
                 <div class="row">
-                    <h3>Laboratory Results</h3>
-                    <div id="pp-lb" class="col-md-9">
+                    <h3>Adverse Events</h3>
+                    <div id="pp-ae" class="col-md-9">
                     </div>
                 </div>
 
+
                 <div class="row">
-                    <h3>Adverse Events</h3>
-                    <div id="pp-ae" class="col-md-9">
+                    <h3>Laboratory Results</h3>
+                    <div id="pp-lb" class="col-md-9">
+                      <div id="lb-charts"></div>
                     </div>
                 </div>
 
@@ -113,6 +123,7 @@
     <script src="js/d3.min.js"></script>
     <script src="js/c3.min.js"></script>
     <script src="js/underscore-min.js"></script>
+    <script src="js/my-globals.js"></script>
 
 
     <script>
@@ -122,7 +133,7 @@
     });
     </script>
 
-    <script src="js/my-globals.js"></script>
+
 
 
     <script>
@@ -153,9 +164,10 @@
             d3.selectAll("svg").remove();
             $("#pp-dm").empty();
             $("#pp-ex").empty();
-            $("#pp-lb").empty();
+            $("#lb-charts").empty();
 
             addDemog(selected_subject);
+            addSv(selected_subject);
             addEx(selected_subject);
             addAe(selected_subject);
             lbDisplay(selected_subject);
@@ -217,51 +229,40 @@
       }
 
 
-      // function addAe(subject) {
-      //   $("#pp-ae").empty();
-      //   $.getJSON(root_url + "/tables/ae/data?usubjid_eq=" + subject, function(data){
-      //     var context = data;
-      //     context['data'].sort(sort_by('aestdtc', false, function(a) { return a.toUpperCase(); }));
-      //     var source = $('#template-ae').html();
-      //     var template = Handlebars.compile(source);
-      //     rendered = template(context);
-      //     $('#pp-ae').html(rendered);
-      //   });
-      // }
-
-
-      // function addDomain(domain,subject,sortby) {
-      //   $("#pp-" + domain).empty();
-      //   $.getJSON(root_url + "/tables/" + domain + "/data?usubjid_eq=" + subject, function(data){
-      //     // data.sort(sort_by())
-      //     var context = data;
-      //     var source = $('#template-' + domain).html();
-      //     var template = Handlebars.compile(source);
-      //     rendered = template(context);
-      //     $('#pp-' + domain).html(rendered);
-      //     $("#table-" + domain).tablesorter();
-      //   });
-      // }
+      function addSv(subject) {
+        $("#pp-sv").empty();
+        data_url = root_url + "/tables/sv/data?usubjid_eq=" + subject;
+        infoBox('sv data: &nbsp;&nbsp;&nbsp;<a href="' + data_url + '">' + data_url + '</a>');
+        $.getJSON(data_url, function(data){
+          var context = data;
+          context['data'].sort(sort_by('svstdtc', false, function(a) { return a.toUpperCase(); }));
+          var source = $('#template-sv').html();
+          var template = Handlebars.compile(source);
+          rendered = template(context);
+          $('#pp-sv').html(rendered);
+        });
+      }
 
 
      function lbDisplay(subject) {
 
+      // console.log("Generating charts for " + ddSel);
       urlp1 = root_url + "/tables/lb/data?usubjid_eq="
 
-      _.each(display_labs, function(param) {
+      _.each(display_labs, function(param,ndx) {
+
+        // append div for chart
+        var tooltip = d3.select("#lb-charts").append("div").attr("id", "lb-chart-" + ndx.toString());
 
         urlp2 = "&lbtest_eq=" + param;
-        full_lb_url = urlp1 + subject + urlp2;
+        fullUrl = urlp1 + subject + urlp2;
 
-        d3.json(full_lb_url, function(error, json) {
-          if (error) {
-              console.log(error);
-          } else {
-              data = json;
-          }
+        infoBox('Lab data: &nbsp;&nbsp;&nbsp;<a href="' + fullUrl + '">' + fullUrl + '</a>');
+        d3.json(fullUrl, function(error, json) {
+          if (error) { console.log(error);
+          } else { data = json; }
 
-          infoBox("lb data: " + '<a href="' + full_lb_url + '">' + full_lb_url + '</a>');
-          buildLine(data,param);
+          buildLine(data,param,ndx);
 
         });
 
@@ -270,146 +271,52 @@
     }    
 
 
-    function buildLine(ds,param) {
+    function buildLine(ds,param,chart_num) {
 
       var results = _.pluck(ds['data'], 'lbstresn');
       var visitDays = _.pluck(ds['data'], 'visitdy');
-      var visdyMax = _.max(visitDays);
-      var normalLows = _.pluck(ds['data'], 'lbstnrlo');
-      var normalHighs = _.pluck(ds['data'], 'lbstnrhi');
       var paramUnit = _.uniq(_.pluck(ds['data'], 'lbstresu'));
+      var normalLow = _.pluck(ds['data'], 'lbstnrlo')[0];
+      var normalHigh = _.pluck(ds['data'], 'lbstnrhi')[0];
 
-      var svg1 = d3.select("#pp-lb").append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-      //add tooltip
-      var tooltip = d3.select("#pp-lb").append("div")
-          .attr("class", "tooltip")
-          .style("opacity", 0);          
-
-
-      var xScale = d3.scale.linear()
-          .domain([_.min(visitDays),_.max(visitDays)])
-          .range([0, width]); //padding+5,w-padding-5]);
-
-      var yScale = d3.scale.linear()
-          .domain([
-            _.min(results.concat(normalLows))*0.98,
-            _.max(results.concat(normalHighs))*1.02
-          ])
-          .range([height,0])
-          .nice();
-
-
-      var xAxisGen = d3.svg.axis().scale(xScale).orient("bottom");
-      var yAxisGen = d3.svg.axis().scale(yScale).orient("left").ticks(0);
-
-
-      var lineFunc = d3.svg.line()
-          .x(function(d) { return xScale(d.visitdy); })
-          .y(function(d) { return yScale(d.lbstresn);})
-          .interpolate("linear")
-          ;
-
-      // could just draw a straight line but the data is in an array so just going to interpolate a straight line!
-      var upperNormalFunc = d3.svg.line()
-          .x(function(d) { return xScale(d.visitdy); })
-          .y(function(d) { return yScale(d.lbstnrhi);})
-          .interpolate("linear")
-          ;
-      var lowerNormalFunc = d3.svg.line()
-          .x(function(d) { return xScale(d.visitdy); })
-          .y(function(d) { return yScale(d.lbstnrlo);})
-          .interpolate("linear")
-          ;
-
-      var xAxis = svg1.append("g").call(xAxisGen)
-          .attr("class", "x-axis")
-          .attr("transform", "translate(0," + height + ")");
-      var yAxis = svg1.append("g").call(yAxisGen)
-          .attr("class", "y-axis");
-          // .attr("transform", "translate(" + width + ", 0)");
-
-      var paramLine = svg1.append("path")
-      .attr({
-        d: lineFunc(ds['data']),
-        "stroke": "purple",
-        "stroke-width": 2,
-        "fill": "none"
+      var decimalPortions = results.map(function(el) {
+          d = el.toString().split(".")[1]
+          if (typeof d === 'undefined') { return 0; } else { return d.length; }
+        });
+      maxDecimalPlaces = Math.max.apply(null,decimalPortions);
+      console.log(results);
+      console.log(decimalPortions);
+      var chart = c3.generate({
+        bindto: '#lb-chart-' + chart_num.toString(),
+        data: {
+          x: "x",
+          columns: [
+            ["x"].concat(visitDays),
+            [param].concat(results)
+          ]
+        },
+        axis: {
+          x: {
+            label: 'Study Day'
+          },
+          y: {
+            label:  { text: paramUnit, position: 'outer-middle' },
+            tick: { format: function(x) { return x.toFixed(maxDecimalPlaces);}},
+            min: Math.min.apply(null,results.concat(normalLow))*0.98,
+            max: Math.max.apply(null,results.concat(normalHigh))*1.02
+          },
+        },
+        grid: {
+          y: {
+            lines: [{value: normalLow, text: 'Lower Normal Limit'}, {value: normalHigh, text: 'Upper Normal Limit'}]
+          }
+        },
+        size: { width: 480, height: 240 }
       });
-
-      var upperNormalLine = svg1.append("path")
-      .attr({
-        d: upperNormalFunc(ds['data']),
-        "stroke": "black",
-        "stroke-width": 1,
-        "stroke-dasharray": ("3, 3"),
-        "fill": "none"
-      });
-
-      var lowerNormalLine = svg1.append("path")
-      .attr({
-        d: lowerNormalFunc(ds['data']),
-        "stroke": "black",
-        "stroke-width": 1,
-        "stroke-dasharray": ("3, 3"),
-        "fill": "none"
-      });
-
-
-      var dots = svg1.selectAll("circle")
-          .data(ds['data'])
-          .enter()
-          .append("circle")
-          .attr({
-            cx: function(d) { return xScale(d.visitdy); },  /* same as in lineFunc */
-            cy: function(d) { return yScale(d.lbstresn); },
-            r: 4,
-            "fill": "#666666"
-            // ,class: "circle-" + ds.category
-          })
-          .on("mouseover", function(d) {
-            tooltip.transition()
-                   .duration(500)
-                   .style("opacity", 0.85);
-            tooltip.html("<strong>" + d.lbstresn + "</strong>")
-                   .style("left", (d3.event.pageX) + "px")
-                   .style("top", (d3.event.pageY + 28) + "px")
-          })
-         .on("mouseout", function(d) { /* make it disappear when mousing away */
-            tooltip.transition()
-                   .duration(300)
-                   .style("opacity", 0)
-          });
-
-
-      // label graph    
-      var title = svg1.append("text")
-          .attr("class", "title")
-          .attr("x", width/2)
-          .attr("y", 0) //0 - (margin.top/2))
-          .attr("text-anchor", "middle")
-          .text(param);
-
-      // label x-axis
-      var xLabel = svg1.append("text")
-          .attr("x", width/2)
-          .attr("y", height + 30) // - 0*(margin.top/3))
-          .style("text-anchor", "middle")
-          .text("Study Day");
-
-      // label y-axis
-      var xLabel = svg1.append("text")
-          .attr("x", -1.4*height/2)
-          .attr("y", -1*margin.left/3)
-          .style("text-anchor", "left")
-          .attr("transform", "rotate(-90)")
-          .text(paramUnit);
 
     }
+
+  </script>
 
 
     </script>
@@ -450,12 +357,15 @@
         <tr class="header">
           <th>Reported Term</th>
           <th>Preferred Term</th>
+          <th>Body System</th>
+          <th>Severity</th>
+          <th>Serious</th>
           <th>Start Date</th>
           <th>End Date</th>
         </tr>
         {{#each data}}
           <tr>
-            <td>{{ aeterm }}</td><td>{{ aedecod }}</td><td>{{ aestdtc }}</td><td>{{ aeendtc }}</td>
+            <td>{{ aeterm }}</td><td>{{ aedecod }}</td><td>{{ aebodsys }}</td><td>{{ aesev }}</th><td>{{ aeser }}</td><td>{{ aestdtc }}</td><td>{{ aeendtc }}</td>
           </tr>
         {{/each}}
       </table>
@@ -464,21 +374,38 @@
 
 
     <script id="template-ex" type="text/x-handlebars-template">
-      <div class="col-md-9">
+      <div class="col-md-3">
       <table id="table-ex" class="table table-bordered tablesorter">
         <tr class="header">
-          <th>Dose</th>
-          <th>Unit</th>
+          <th>Dose / Unit</th>
           <th>Date</th>
         </tr>
         {{#each data}}
           <tr>
-            <td>{{ exdose }}</td><td>mg</td><td>{{ exstdtc }}</td>
+            <td>{{ exdose }} mg</td><td>{{ exstdtc }}</td>
           </tr>
         {{/each}}
       </table>
       </div>
-    </script>    
+    </script>
+
+
+    <script id="template-sv" type="text/x-handlebars-template">
+      <div class="col-md-6">
+      <table id="table-sv" class="table table-bordered tablesorter">
+        <tr class="header">
+          <th>Visit Name</th>
+          <th>Visit Number</th>
+          <th>Visit Date</th>
+        </tr>
+        {{#each data}}
+          <tr>
+            <td>{{ visit }}</td><td>{{ visitnum }}</td><td>{{ svstdtc }}</th>
+          </tr>
+        {{/each}}
+      </table>
+      </div>
+    </script>
 </body>
 
 </html>

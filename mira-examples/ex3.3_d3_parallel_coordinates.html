@@ -14,7 +14,9 @@
     <a href="index.html">Index</a><br />
     <h3>Parallel Coordinates - Lab data example</h3>
     <a href="https://github.com/syntagmatic/parallel-coordinates">https://github.com/syntagmatic/parallel-coordinates</a>
-
+    <ul>
+      <li>Columns can be re-ordered</li>
+    </ul>
     <div id="parallel-coordinates-example" class="parcoords" style="margin-left:auto;margin-right:auto;width:1300px;margin-left:50px;height:500px;">
     </div>
     </div>
@@ -58,7 +60,8 @@
         .margin({ top: 24, left: 150, bottom: 12, right: 0 })
         .mode("queue")
         .render()
-        .brushMode("1D-axes");  // enable brushing
+        .brushMode("1D-axes")  // enable brushing
+        .reorderable();
 
       parcoords.svg.selectAll("text")
         .style("font", "10px sans-serif");

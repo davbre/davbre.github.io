@@ -3,20 +3,24 @@
 <head>
   <title>Example 1</title>
   <link rel="stylesheet" href="css/c3.min.css">
+  <link rel="stylesheet" href="css/info-box.css">  
   <meta http-equiv="content-type" content="text/html; charset=UTF8">
 </head>
+<style>
+  .c3-ygrid-line line {
+    stroke-dasharray: 5,5;
+    /*stroke: red;*/
+  }
+</style>
 <body class="application">
 
-  <a href="index.html">Index</a>
-
-  <ul>
-    <li>See the ajax requests in the console</li>
-  </ul>
+  <a href="index.html">Index</a><br />
+  <button id="info-box-toggle">Show/hide info box</button>
 
   <div id="container">
 
     <p>Select Subject
-      <select id="usubjid-option">
+      <select id="usubjid-select">
         <option disabled selected> -- select a subject ID -- </option>
       </select>
     </p>
@@ -25,11 +29,16 @@
 
   </div>
 
+  <div id="info-box">
+    <h5>HTTP requests to Mira (most recent on top):</h5>
+    <div id="info-box-prepend"></div>
+  </div>
 </body>
 
   <script src="js/d3.min.js"></script>
   <script src="js/c3.min.js"></script>
   <script src="js/underscore-min.js"></script>
+  <script src="js/jquery-2.1.4.min.js"></script>
   <script src="js/my-globals.js"></script>
 
   <script>
@@ -37,28 +46,20 @@
     var display_labs = ["Albumin", "Calcium", "Glucose", "Blood Urea Nitrogen (BUN)"]
 
     // populate select
-    d3.json(root_url + "/tables/dm/columns/usubjid/distinct?per_page=200", function(error, json) {
-      if (error) {
-          console.log(error);
-      } else {
-          data = json;
-      }
-
-      var selList = d3.select("select")
-          .selectAll("option")
-          .data(data)
-          .enter()
-          .append("option")
-          .attr({
-            id: function(d) { return d; }
-          })
-          .text(function(d) { return d; });
+    subjects_url = root_url + "/tables/dm/columns/usubjid/distinct?per_page=200";
+    infoBox('Subjects: &nbsp;&nbsp;&nbsp;<a href="' + subjects_url + '">' + subjects_url + '</a>');
+    $.getJSON(subjects_url, function(data){
+        $.each(data, function(key, val) {
+          $('#usubjid-select').append(
+            $('<option></option>').val(val).html(val)
+        );
+      });
     });
 
     // event listener
     d3.select("select")
       .on("change", function(d,i) {
-        var selected_sbj = d3.select("#usubjid-option")
+        var selected_sbj = d3.select("#usubjid-select")
                           .node() // this gives the actual selected node
                           .value;
         d3.selectAll("svg").remove();
@@ -79,6 +80,7 @@
         urlp2 = "&lbtest_eq=" + param;
         fullUrl = urlp1 + ddSel + urlp2;
 
+        infoBox('Lab data: &nbsp;&nbsp;&nbsp;<a href="' + fullUrl + '">' + fullUrl + '</a>');
         d3.json(fullUrl, function(error, json) {
           if (error) { console.log(error);
           } else { data = json; }
@@ -97,11 +99,21 @@
       var results = _.pluck(ds['data'], 'lbstresn');
       var visitDays = _.pluck(ds['data'], 'visitdy');
       var paramUnit = _.uniq(_.pluck(ds['data'], 'lbstresu'));
+      var normalLow = _.pluck(ds['data'], 'lbstnrlo')[0];
+      var normalHigh = _.pluck(ds['data'], 'lbstnrhi')[0];
 
-      console.log("-- data for " + param + " chart:")
+      var decimalPortions = results.map(function(el) {
+          d = el.toString().split(".")[1]
+          if (typeof d === 'undefined') { return 0; } else { return d.length; }
+        });
+      maxDecimalPlaces = Math.max.apply(null,decimalPortions);
+
+      console.log("-- data for " + param + " chart:");
       console.log("Results:" + results);
+      console.log("Max decimal places: " + maxDecimalPlaces);
       console.log("Study Days: " + visitDays);
 
+      console.log(results);
       var chart = c3.generate({
         bindto: '#chart-' + chart_num.toString(),
         data: {
@@ -116,13 +128,18 @@
             label: 'Study Day'
           },
           y: {
-            label:  {
-              text: paramUnit,
-              position: 'outer-middle'
-            }
+            label:  { text: paramUnit, position: 'outer-middle' },
+            tick: { format: function(x) { return x.toFixed(maxDecimalPlaces);}},
+            min: Math.min.apply(null,results.concat(normalLow))*0.98,
+            max: Math.max.apply(null,results.concat(normalHigh))*1.02
           },
         },
-        size: { width: 480 }
+        grid: {
+          y: {
+            lines: [{value: normalLow, text: 'Lower Normal Limit'}, {value: normalHigh, text: 'Upper Normal Limit'}]
+          }
+        },
+        size: { width: 480, height: 240 }
       });
 
     }

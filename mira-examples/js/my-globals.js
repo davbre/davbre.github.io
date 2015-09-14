@@ -56,6 +56,8 @@ function infoBox(text,dom_id) {
   }
 }
 
-$('#info-box-toggle').click(function() {
-  $('#info-box').toggle();
-});
+if (typeof jQuery != 'undefined') {
+  $('#info-box-toggle').click(function() {
+    $('#info-box').toggle();
+  });
+}
