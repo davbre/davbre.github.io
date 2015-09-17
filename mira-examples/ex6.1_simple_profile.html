@@ -17,8 +17,9 @@
     <link href="startbootstrap-simple-sidebar-1.0.4/css/simple-sidebar.css" rel="stylesheet">
     <link rel="stylesheet" href="css/tablesorter_style.css">
     <link rel="stylesheet" href="css/c3.min.css">
-    <!-- <link rel="stylesheet" href="css/d3_examples.css"> -->
+    <link rel="stylesheet" href="css/patient_profile.css">
     <link rel="stylesheet" href="css/info-box.css">
+
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -158,24 +159,25 @@
 
       function addSelectListener(callback) {
 
-          $('#usubjid-select').on('change', function() {
-            selected_subject = $(this).val();
+        $('#usubjid-select').on('change', function() {
+          selected_subject = $(this).val();
 
-            d3.selectAll("svg").remove();
-            $("#pp-dm").empty();
-            $("#pp-ex").empty();
-            $("#lb-charts").empty();
+          d3.selectAll("svg").remove();
+          $("#pp-dm").empty();
+          $("#pp-ex").empty();
+          $("#lb-charts").empty();
 
-            addDemog(selected_subject);
-            addSv(selected_subject);
-            addEx(selected_subject);
-            addAe(selected_subject);
-            lbDisplay(selected_subject);
+          addDemog(selected_subject);
+          addSv(selected_subject);
+          addEx(selected_subject);
+          addAe(selected_subject);
+          lbDisplay(selected_subject);
             // addDomain("ex",selected_subject);
             // addDomain("ae",selected_subject);
+            // $("#pp-ae").find()
+        });
 
-          });
-          callback();
+        callback();
       }
 
       function checkUrlForSubject() {
@@ -225,6 +227,24 @@
           var template = Handlebars.compile(source);
           rendered = template(context);
           $('#pp-ae').html(rendered);
+        }).done(function() {
+          /* highlight serious events */
+          $(".aeser").each(function() {
+            if ($.inArray($(this).text(), ["true","Yes","Y"]) > -1) {
+              $(this).addClass("blink-red").css({"background-color": "#FF8080"});
+            }
+          });
+          /* highlight severe events */
+          $(".aesev").each(function() {
+            if ($.inArray($(this).text(), ["Severe","Moderate"]) > -1) {
+              $(this).addClass("blink-red");
+              if ($(this).text() === "Severe") {
+                $(this).css({"background-color": "#FF8080"});
+              } else {
+                $(this).css({"background-color": "#FFE066"});
+              }
+            }
+          });          
         });
       }
 
@@ -319,8 +339,6 @@
   </script>
 
 
-    </script>
-
 
     
     <!--------------------------------------------------------------------------
@@ -365,7 +383,7 @@
         </tr>
         {{#each data}}
           <tr>
-            <td>{{ aeterm }}</td><td>{{ aedecod }}</td><td>{{ aebodsys }}</td><td>{{ aesev }}</th><td>{{ aeser }}</td><td>{{ aestdtc }}</td><td>{{ aeendtc }}</td>
+            <td>{{ aeterm }}</td><td>{{ aedecod }}</td><td>{{ aebodsys }}</td><td class="aesev">{{ aesev }}</th><td class="aeser">{{ aeser }}</td><td>{{ aestdtc }}</td><td>{{ aeendtc }}</td>
           </tr>
         {{/each}}
       </table>

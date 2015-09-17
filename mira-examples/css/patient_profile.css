@@ -1,0 +1,19 @@
+@keyframes blink-red {
+    0% { box-shadow: 0 0 15px red; }
+    50% { box-shadow: none; }
+    100% { box-shadow: 0 0 15px red; }
+}
+
+@-webkit-keyframes blink-red {
+    0% { box-shadow: 0 0 15px red; }
+    50% { box-shadow: 0 0 0; }
+    100% { box-shadow: 0 0 15px red; }
+}
+
+.blink-red {
+    -webkit-animation: blink-red 1.0s linear infinite;
+    -moz-animation: blink-red 1.0s linear infinite;
+    -ms-animation: blink-red 1.0s linear infinite;
+    -o-animation: blink-red 1.0s linear infinite;
+    animation: blink-red 1.0s linear infinite;
+}
