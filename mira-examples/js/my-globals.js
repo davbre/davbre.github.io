@@ -1,7 +1,14 @@
 
-var root_url = "http://localhost:3000/api/projects/4";
-// var root_url = "http://46.101.208.152/api/projects/1";
-// var root_url = "http://46.101.208.152/api/projects/3";
+switch(window.location.protocol) {
+  // set root_url depending on whether running locally or not
+  case 'file:':
+    var root_url = "http://localhost:3000/api/projects/2";
+    break;
+  default: 
+    var root_url = "http://46.101.208.152/api/projects/5";
+}
+
+
 var patient_profile_root = "ex6.1_simple_profile.html";
 
 var entityMap = {

@@ -17,7 +17,7 @@
       </select>      
     </p>
 
-    <div id="subject-info" > 
+    <div id="subject-info" class="col-md-9" > 
     </div><br />
 
     <div id="charts">
@@ -75,10 +75,10 @@
 
       d3.json(dm_url, function(error, dm_json) {
         sbjDm = dm_json.data[0];
-        chart_header = '<h4 style="text-align:center">Adverse Events for Subject ' + "<a " + 'title="View patient profile" href="ex6.1_simple_profile.html#' + sbjDm.usubjid + '">' + sbjDm.usubjid + "</a></h4>";
+        chart_header = '<h4>Adverse Events for Subject ' + "<a " + 'title="View patient profile" href="ex6.1_simple_profile.html#' + sbjDm.usubjid + '">' + sbjDm.usubjid + "</a></h4>";
         console.log(chart_header);
         $("#subject-info").append(chart_header);
-        $("#subject-info").append('<h5 style="text-align:center">Treatment: ' + sbjDm.actarm + ", Gender: " + sbjDm.sex + ", Age: " + sbjDm.age + "</h5>");
+        $("#subject-info").append('<h5>' + sbjDm.actarm + ", Gender: " + sbjDm.sex + ", Age: " + sbjDm.age + "</h5>");
         d3.json(ae_url, function(error, ae_json) {
           d3.json(ex_url, function(error, ex_json) {
             buildAeExChart(dm_json,ae_json,ex_json);
