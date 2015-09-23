@@ -70,41 +70,36 @@
                 <a href="#info-box-toggle" class="btn btn-default" id="info-box-toggle">Show/hide info box</a>
 
                 <div class="row">
-                    <h3>Patient Summary</h3>
                     <div id="pp-dm" class="col-md-9">
                     </div>
                 </div>
 
                 <div class="row">
-                    <h3>Study Visits</h3>
                     <div id="pp-sv" class="col-md-9">
                     </div>
                 </div>
 
 
                 <div class="row">
-                    <h3>Exposure</h3>
                     <div id="pp-ex" class="col-md-9">
                     </div>
                 </div>
 
 
                 <div class="row">
-                    <h3>Adverse Events</h3>
                     <div id="pp-ae" class="col-md-9">
                     </div>
                 </div>
 
 
                 <div class="row">
-                    <h3>Laboratory Results</h3>
                     <div id="pp-lb" class="col-md-9">
                       <div id="lb-charts"></div>
                     </div>
                 </div>
 
 
-                <div id="info-box">
+                <div id="info-box" style="display:none">
                   <h5>HTTP requests to Mira (most recent on top):</h5>
                   <div id="info-box-prepend">
                 </div>
@@ -162,19 +157,21 @@
         $('#usubjid-select').on('change', function() {
           selected_subject = $(this).val();
 
-          d3.selectAll("svg").remove();
-          $("#pp-dm").empty();
-          $("#pp-ex").empty();
-          $("#lb-charts").empty();
+          if (selected_subject) {
+            d3.selectAll("svg").remove();
+            $("#pp-dm").empty();
+            $("#pp-ex").empty();
+            $("#lb-charts").empty();
 
-          addDemog(selected_subject);
-          addSv(selected_subject);
-          addEx(selected_subject);
-          addAe(selected_subject);
-          lbDisplay(selected_subject);
-            // addDomain("ex",selected_subject);
-            // addDomain("ae",selected_subject);
-            // $("#pp-ae").find()
+            addDemog(selected_subject);
+            addSv(selected_subject);
+            addEx(selected_subject);
+            addAe(selected_subject);
+            lbDisplay(selected_subject);
+              // addDomain("ex",selected_subject);
+              // addDomain("ae",selected_subject);
+              // $("#pp-ae").find()
+          }
         });
 
         callback();
@@ -269,6 +266,7 @@
       // console.log("Generating charts for " + ddSel);
       urlp1 = root_url + "/tables/lb/data?usubjid_eq="
 
+
       _.each(display_labs, function(param,ndx) {
 
         // append div for chart
@@ -287,6 +285,8 @@
         });
 
       });
+
+      $("#pp-lb").prepend("<h3>Laboratory Results</h3>");
 
     }    
 
@@ -347,6 +347,7 @@
       --------------------------------------------------------------------------
       -------------------------------------------------------------------------->
     <script id="template-dm" type="text/x-handlebars-template">
+      <h3>Patient Summary</h3>
       <div class="col-md-6">
       <table id="table-dm" class="table table-striped">
         <tr>
@@ -370,6 +371,7 @@
 
 
     <script id="template-ae" type="text/x-handlebars-template">
+      <h3>Adverse Events</h3>
       <div class="col-md-9">
       <table id="table-ae" class="table table-bordered tablesorter">
         <tr class="header">
@@ -392,6 +394,7 @@
 
 
     <script id="template-ex" type="text/x-handlebars-template">
+      <h3>Exposure</h3>
       <div class="col-md-3">
       <table id="table-ex" class="table table-bordered tablesorter">
         <tr class="header">
@@ -409,6 +412,7 @@
 
 
     <script id="template-sv" type="text/x-handlebars-template">
+      <h3>Study Visits</h3>
       <div class="col-md-6">
       <table id="table-sv" class="table table-bordered tablesorter">
         <tr class="header">
