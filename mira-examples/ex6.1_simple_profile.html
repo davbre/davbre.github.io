@@ -94,7 +94,6 @@
 
                 <div class="row">
                     <div id="pp-lb" class="col-md-9">
-                      <div id="lb-charts"></div>
                     </div>
                 </div>
 
@@ -161,7 +160,7 @@
             d3.selectAll("svg").remove();
             $("#pp-dm").empty();
             $("#pp-ex").empty();
-            $("#lb-charts").empty();
+            $("#pp-lb").empty();
 
             addDemog(selected_subject);
             addSv(selected_subject);
@@ -267,6 +266,8 @@
       urlp1 = root_url + "/tables/lb/data?usubjid_eq="
 
 
+      $("#pp-lb").append('<h3>Laboratory Results</h3><div id="lb-charts"></div>');
+
       _.each(display_labs, function(param,ndx) {
 
         // append div for chart
@@ -286,7 +287,6 @@
 
       });
 
-      $("#pp-lb").prepend("<h3>Laboratory Results</h3>");
 
     }    
 
