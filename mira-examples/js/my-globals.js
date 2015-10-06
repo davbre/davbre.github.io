@@ -5,7 +5,8 @@ switch(window.location.protocol) {
     var root_url = "http://localhost:3000/api/projects/2";
     break;
   default: 
-    var root_url = "http://46.101.208.152/api/projects/5";
+    // var root_url = "http://46.101.208.152/api/projects/5";
+    var root_url = "http://178.62.193.189";
 }
 
 
