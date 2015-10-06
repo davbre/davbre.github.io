@@ -6,7 +6,7 @@ switch(window.location.protocol) {
     break;
   default: 
     // var root_url = "http://46.101.208.152/api/projects/5";
-    var root_url = "http://178.62.193.189";
+    var root_url = "http://178.62.193.189/api/projects/6";
 }
 
 
